@@ -18,9 +18,10 @@
   .tab{padding:12px 20px;cursor:pointer;font-size:14px;font-weight:bold;color:#7A8394;border-bottom:3px solid transparent}
   .tab.active{color:var(--navy);border-bottom-color:var(--gold)}
   .wrap{max-width:900px;margin:0 auto;padding:22px}
-  #view-log,#view-dash{max-width:1500px}
+  #view-log,#view-dash{max-width:none;padding-left:26px;padding-right:26px}
   #logTable th,#logTable td{padding:10px 12px}
   #logTable td:nth-child(1),#logTable td:nth-child(2),#logTable td:nth-child(11){white-space:nowrap}
+  #logTable th:nth-child(9),#logTable td:nth-child(9){width:175px}
   .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:18px}
   .sec-title{color:var(--navy);font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
     border-bottom:2px solid var(--gold);padding-bottom:6px;margin:0 0 14px}
@@ -61,7 +62,7 @@
   .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
   .toolbar input,.toolbar select{width:auto;min-width:150px}
   .count{font-size:13px;color:#8A93A3;margin-left:auto}
-  .stsel{min-width:155px;padding:4px 6px;border:1px solid #CBD1DA;border-radius:4px;font-size:12px;font-family:inherit;background:#fff;cursor:pointer}
+  .stsel{width:100%;min-width:150px;padding:4px 6px;border:1px solid #CBD1DA;border-radius:4px;font-size:12px;font-family:inherit;background:#fff;cursor:pointer}
   .stsel:disabled{opacity:.5}
   /* dashboard */
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
