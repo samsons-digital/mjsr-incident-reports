@@ -58,6 +58,8 @@
   .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
   .toolbar input,.toolbar select{width:auto;min-width:150px}
   .count{font-size:13px;color:#8A93A3;margin-left:auto}
+  .stsel{padding:4px 6px;border:1px solid #CBD1DA;border-radius:4px;font-size:12px;font-family:inherit;background:#fff;cursor:pointer}
+  .stsel:disabled{opacity:.5}
   /* dashboard */
   .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;border-top:4px solid var(--gold)}
@@ -73,7 +75,7 @@
   .barrow{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
   .barrow .lab{width:130px;flex:none;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .barrow .track{flex:1;background:#EEF0F3;border-radius:4px;height:20px;overflow:hidden}
-  .barrow .fill{height:100%;background:var(--navy);border-radius:4px;min-width:2px}
+  .barrow .fill{display:block;height:100%;background:var(--navy);border-radius:4px;min-width:2px}
   .barrow .num{width:34px;flex:none;text-align:right;font-weight:bold;color:var(--charcoal)}
   .vbars{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:10px}
   .vbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
@@ -280,7 +282,7 @@
     <div class="sec-title" style="text-align:left">Restricted</div>
     <p style="font-size:13px;color:#8A93A3">Enter the manager PIN to view submitted incidents.</p>
     <input type="password" id="pin" placeholder="PIN" style="text-align:center" onkeydown="if(event.key==='Enter')openLog()">
-    <div style="margin-top:12px"><button class="btn gold" onclick="openLog()">View Log</button></div>
+    <div style="margin-top:12px"><button class="btn gold" onclick="openLog(this)">View Log</button></div>
     <div id="pinErr" style="color:var(--err);font-size:13px;margin-top:10px"></div>
   </div>
 
@@ -290,7 +292,7 @@
       <select id="fSite" onchange="renderLog()"><option value="">All sites</option><option>MJSR</option><option>Green Valley</option></select>
       <select id="fPrio" onchange="renderLog()"><option value="">All priorities</option><option>P0</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option></select>
       <select id="fStatus" onchange="renderLog()"><option value="">All statuses</option><option>Open</option><option>Under investigation</option><option>Closed</option></select>
-      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderLog)">Refresh</button>
+      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderLog, null, this)">Refresh</button>
       <span class="count" id="count"></span>
     </div>
     <div class="tablewrap">
@@ -308,7 +310,7 @@
     <div class="sec-title" style="text-align:left">Restricted</div>
     <p style="font-size:13px;color:#8A93A3">Enter the manager PIN to view the dashboard.</p>
     <input type="password" id="pinDash" placeholder="PIN" style="text-align:center" onkeydown="if(event.key==='Enter')openDash()">
-    <div style="margin-top:12px"><button class="btn gold" onclick="openDash()">View Dashboard</button></div>
+    <div style="margin-top:12px"><button class="btn gold" onclick="openDash(this)">View Dashboard</button></div>
     <div id="pinErrDash" style="color:var(--err);font-size:13px;margin-top:10px"></div>
   </div>
 
@@ -316,7 +318,7 @@
     <div class="toolbar">
       <select id="dYear" onchange="renderDash()"></select>
       <select id="dSite" onchange="renderDash()"><option value="">All sites</option><option>MJSR</option><option>Green Valley</option><option>Water Source</option><option>Ski Village</option><option>Samsons Inn</option><option>On Road</option><option>During activity</option></select>
-      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderDash)">Refresh</button>
+      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderDash, null, this)">Refresh</button>
       <span class="count" id="dCount"></span>
     </div>
 
@@ -457,23 +459,25 @@ function resetForm(){
 }
 
 // ---------- LOG ----------
-function openLog(){
+function openLog(btn){
   const pin = document.getElementById('pin').value.trim();
   if(!pin){ document.getElementById('pinErr').textContent='Enter the PIN.'; return; }
   window._pin = pin;
-  loadData(()=>syncGate('log'), 'pinErr');
+  loadData(()=>syncGate('log'), 'pinErr', btn);
 }
 
-function openDash(){
+function openDash(btn){
   const pin = document.getElementById('pinDash').value.trim();
   if(!pin){ document.getElementById('pinErrDash').textContent='Enter the PIN.'; return; }
   window._pin = pin;
-  loadData(()=>syncGate('dash'), 'pinErrDash');
+  loadData(()=>syncGate('dash'), 'pinErrDash', btn);
 }
 
-async function loadData(cb, errId){
+async function loadData(cb, errId, btnEl){
   const err = errId ? document.getElementById(errId) : null;
   if(err) err.textContent='';
+  let old='';
+  if(btnEl){ old=btnEl.textContent; btnEl.textContent='Loading...'; btnEl.disabled=true; }
   try{
     const res = await fetch(API_URL + '?action=list&pin=' + encodeURIComponent(window._pin));
     const data = await res.json();
@@ -482,6 +486,7 @@ async function loadData(cb, errId){
     authed = true;
     if(cb) cb();
   }catch(e){ if(err) err.textContent='Network error: ' + e.message; }
+  finally{ if(btnEl){ btnEl.textContent=old; btnEl.disabled=false; } }
 }
 
 function renderLog(){
@@ -498,7 +503,6 @@ function renderLog(){
     if(q && !JSON.stringify(r).toLowerCase().includes(q)) return;
     n++;
     const prio=r['Priority']||'';
-    const st=(r['Status']||'').split(' ')[0];
     const tr=document.createElement('tr');
     tr.innerHTML =
       '<td>'+esc(r['Reference ID'])+'</td>'+
@@ -509,12 +513,40 @@ function renderLog(){
       '<td>'+esc(r['Incident Type'])+'</td>'+
       '<td>'+esc(r['Area / Location'])+'</td>'+
       '<td>'+esc(r['Person Name']||r['Person Type'])+'</td>'+
-      '<td><span class="st '+st+'">'+esc(r['Status'])+'</span></td>'+
+      '<td>'+statusSelect(r['Reference ID'], r['Status'])+'</td>'+
       '<td>'+esc(r['Resolved'])+'</td>'+
       '<td>'+esc(r['Reported By'])+'</td>';
     body.appendChild(tr);
   });
   document.getElementById('count').textContent = n + ' of ' + allRows.length + ' shown';
+}
+
+function statusSelect(ref, cur){
+  const opts=['Open','Under investigation','Closed'];
+  return '<select class="stsel" data-ref="'+esc(ref)+'" onchange="updateStatus(this)">'+
+    opts.map(o=>'<option'+(o===cur?' selected':'')+'>'+o+'</option>').join('')+'</select>';
+}
+
+async function updateStatus(sel){
+  const ref=sel.getAttribute('data-ref');
+  const status=sel.value;
+  const prev=sel.getAttribute('data-prev')||'';
+  sel.disabled=true;
+  try{
+    const res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'updateStatus', pin:window._pin, refId:ref, status:status})
+    });
+    const data=await res.json();
+    if(data.ok){
+      const row=allRows.find(r=>r['Reference ID']===ref);
+      if(row){ row['Status']=status; row['Resolved']=(status==='Closed'?'Yes':'No'); }
+      renderLog();
+    }else{
+      alert('Update failed: '+(data.error||'')); sel.disabled=false;
+    }
+  }catch(e){ alert('Network error: '+e.message); sel.disabled=false; }
 }
 
 // ---------- DASHBOARD ----------
