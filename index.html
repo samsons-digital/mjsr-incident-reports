@@ -52,12 +52,36 @@
   .P0{background:#8B0000}.P1{background:#C62828}.P2{background:#E67E22}.P3{background:#F1C40F;color:#3a2f00}.P4{background:#7A8394}
   .st{font-size:11px;font-weight:bold;padding:2px 8px;border-radius:4px}
   .st.Open{background:#FBECEC;color:#B23B3B}.st.Closed{background:#E7F3E8;color:#2E7D32}
-  .st\.Under{background:#FEF6E0;color:#8C6E1F}
+  .st.Under{background:#FEF6E0;color:#8C6E1F}
   .gate{max-width:340px;margin:60px auto;text-align:center}
   .tablewrap{overflow:auto;max-height:65vh;border:1px solid var(--line);border-radius:8px}
   .toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
   .toolbar input,.toolbar select{width:auto;min-width:150px}
   .count{font-size:13px;color:#8A93A3;margin-left:auto}
+  /* dashboard */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;border-top:4px solid var(--gold)}
+  .kpi .v{font-size:30px;font-weight:bold;color:var(--navy);line-height:1}
+  .kpi .l{font-size:12px;color:#7A8394;margin-top:6px;text-transform:uppercase;letter-spacing:.4px}
+  .kpi.alert{border-top-color:var(--err)} .kpi.alert .v{color:var(--err)}
+  .kpi.good{border-top-color:var(--ok)} .kpi.good .v{color:var(--ok)}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+  .panel.full{grid-column:1 / -1}
+  .panel h3{margin:0 0 14px;font-size:13px;color:var(--navy);font-weight:bold;text-transform:uppercase;
+    letter-spacing:.5px;border-bottom:2px solid var(--gold);padding-bottom:6px}
+  .barrow{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .barrow .lab{width:130px;flex:none;color:var(--charcoal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barrow .track{flex:1;background:#EEF0F3;border-radius:4px;height:20px;overflow:hidden}
+  .barrow .fill{height:100%;background:var(--navy);border-radius:4px;min-width:2px}
+  .barrow .num{width:34px;flex:none;text-align:right;font-weight:bold;color:var(--charcoal)}
+  .vbars{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:10px}
+  .vbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .vbar .col{width:70%;background:var(--navy);border-radius:3px 3px 0 0;min-height:2px}
+  .vbar .cv{font-size:11px;color:#7A8394;margin-bottom:3px}
+  .vbar .cl{font-size:10px;color:#8A93A3;margin-top:5px;white-space:nowrap}
+  .empty{color:#8A93A3;font-size:13px;padding:10px 0}
+  @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.panels{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -69,6 +93,7 @@
 <div class="tabs">
   <div class="tab active" id="tab-new" onclick="show('new')">New Report</div>
   <div class="tab" id="tab-log" onclick="show('log')">Incident Log</div>
+  <div class="tab" id="tab-dash" onclick="show('dash')">Dashboard</div>
 </div>
 
 <!-- ===================== NEW REPORT ===================== -->
@@ -265,7 +290,7 @@
       <select id="fSite" onchange="renderLog()"><option value="">All sites</option><option>MJSR</option><option>Green Valley</option></select>
       <select id="fPrio" onchange="renderLog()"><option value="">All priorities</option><option>P0</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option></select>
       <select id="fStatus" onchange="renderLog()"><option value="">All statuses</option><option>Open</option><option>Under investigation</option><option>Closed</option></select>
-      <button class="btn gold" style="padding:8px 16px" onclick="loadLog()">Refresh</button>
+      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderLog)">Refresh</button>
       <span class="count" id="count"></span>
     </div>
     <div class="tablewrap">
@@ -277,17 +302,68 @@
   </div>
 </div>
 
+<!-- ===================== DASHBOARD ===================== -->
+<div class="wrap" id="view-dash" style="display:none">
+  <div id="gate-dash" class="gate card">
+    <div class="sec-title" style="text-align:left">Restricted</div>
+    <p style="font-size:13px;color:#8A93A3">Enter the manager PIN to view the dashboard.</p>
+    <input type="password" id="pinDash" placeholder="PIN" style="text-align:center" onkeydown="if(event.key==='Enter')openDash()">
+    <div style="margin-top:12px"><button class="btn gold" onclick="openDash()">View Dashboard</button></div>
+    <div id="pinErrDash" style="color:var(--err);font-size:13px;margin-top:10px"></div>
+  </div>
+
+  <div id="dashArea" style="display:none">
+    <div class="toolbar">
+      <select id="dYear" onchange="renderDash()"></select>
+      <select id="dSite" onchange="renderDash()"><option value="">All sites</option><option>MJSR</option><option>Green Valley</option><option>Water Source</option><option>Ski Village</option><option>Samsons Inn</option><option>On Road</option><option>During activity</option></select>
+      <button class="btn gold" style="padding:8px 16px" onclick="loadData(renderDash)">Refresh</button>
+      <span class="count" id="dCount"></span>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="panels">
+      <div class="panel"><h3>By Priority</h3><div id="cPrio"></div></div>
+      <div class="panel"><h3>By Status</h3><div id="cStatus"></div></div>
+      <div class="panel"><h3>By Site</h3><div id="cSite"></div></div>
+      <div class="panel"><h3>By Person Type</h3><div id="cPerson"></div></div>
+      <div class="panel full"><h3>Monthly Trend</h3><div id="cTrend"></div></div>
+      <div class="panel"><h3>Top Locations</h3><div id="cArea"></div></div>
+      <div class="panel"><h3>By Incident Type</h3><div id="cType"></div></div>
+      <div class="panel full"><h3>Serious Incidents (P0 / P1)</h3><div class="tablewrap" style="max-height:none"><table><thead><tr><th>Ref</th><th>Date</th><th>Site</th><th>Priority</th><th>Incident</th><th>Person</th><th>Status</th></tr></thead><tbody id="tSerious"></tbody></table></div></div>
+      <div class="panel full"><h3>Recent Incidents</h3><div class="tablewrap" style="max-height:none"><table><thead><tr><th>Ref</th><th>Date</th><th>Site</th><th>Priority</th><th>Incident</th><th>Area</th><th>Status</th></tr></thead><tbody id="tRecent"></tbody></table></div></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ONLY value to set after deploying the Apps Script web app:
 const API_URL = "https://script.google.com/macros/s/AKfycbxh2wuVDWQXkQc3cVHy4FYg2abDCstjqTiDoYfbNdpujexCg5KWKmfyQVqOj07otS8J/exec";
 
 let allRows = [];
+let authed = false;
 
 function show(v){
   document.getElementById('view-new').style.display = v==='new'?'block':'none';
   document.getElementById('view-log').style.display = v==='log'?'block':'none';
+  document.getElementById('view-dash').style.display = v==='dash'?'block':'none';
   document.getElementById('tab-new').classList.toggle('active', v==='new');
   document.getElementById('tab-log').classList.toggle('active', v==='log');
+  document.getElementById('tab-dash').classList.toggle('active', v==='dash');
+  if(v==='log') syncGate('log');
+  if(v==='dash') syncGate('dash');
+}
+
+function syncGate(which){
+  if(which==='log'){
+    document.getElementById('gate').style.display = authed?'none':'block';
+    document.getElementById('logArea').style.display = authed?'block':'none';
+    if(authed) renderLog();
+  } else {
+    document.getElementById('gate-dash').style.display = authed?'none':'block';
+    document.getElementById('dashArea').style.display = authed?'block':'none';
+    if(authed) renderDash();
+  }
 }
 
 function val(id){ return (document.getElementById(id).value || "").trim(); }
@@ -385,20 +461,27 @@ function openLog(){
   const pin = document.getElementById('pin').value.trim();
   if(!pin){ document.getElementById('pinErr').textContent='Enter the PIN.'; return; }
   window._pin = pin;
-  loadLog();
+  loadData(()=>syncGate('log'), 'pinErr');
 }
 
-async function loadLog(){
-  const err = document.getElementById('pinErr'); err.textContent='';
+function openDash(){
+  const pin = document.getElementById('pinDash').value.trim();
+  if(!pin){ document.getElementById('pinErrDash').textContent='Enter the PIN.'; return; }
+  window._pin = pin;
+  loadData(()=>syncGate('dash'), 'pinErrDash');
+}
+
+async function loadData(cb, errId){
+  const err = errId ? document.getElementById(errId) : null;
+  if(err) err.textContent='';
   try{
     const res = await fetch(API_URL + '?action=list&pin=' + encodeURIComponent(window._pin));
     const data = await res.json();
-    if(!data.ok){ err.textContent = data.error || 'Access denied.'; return; }
+    if(!data.ok){ if(err) err.textContent = data.error || 'Access denied.'; return; }
     allRows = data.rows || [];
-    document.getElementById('gate').style.display='none';
-    document.getElementById('logArea').style.display='block';
-    renderLog();
-  }catch(e){ err.textContent='Network error: ' + e.message; }
+    authed = true;
+    if(cb) cb();
+  }catch(e){ if(err) err.textContent='Network error: ' + e.message; }
 }
 
 function renderLog(){
@@ -432,6 +515,112 @@ function renderLog(){
     body.appendChild(tr);
   });
   document.getElementById('count').textContent = n + ' of ' + allRows.length + ' shown';
+}
+
+// ---------- DASHBOARD ----------
+const PC = {P0:'#8B0000',P1:'#C62828',P2:'#E67E22',P3:'#F1C40F',P4:'#7A8394'};
+
+function populateYears(){
+  const sel=document.getElementById('dYear');
+  if(sel.options.length) return;
+  const years=[...new Set(allRows.map(r=>(r['Date Of Incident']||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  sel.innerHTML='<option value="">All years</option>'+years.map(y=>'<option>'+y+'</option>').join('');
+}
+
+function dcut(){
+  const y=document.getElementById('dYear').value;
+  const s=document.getElementById('dSite').value;
+  return allRows.filter(r=>{
+    if(y && (r['Date Of Incident']||'').slice(0,4)!==y) return false;
+    if(s && r['Site']!==s) return false;
+    return true;
+  });
+}
+
+function renderDash(){
+  if(!authed) return;
+  populateYears();
+  const rows=dcut();
+  document.getElementById('dCount').textContent=rows.length+' incidents';
+
+  const total=rows.length;
+  const openN=rows.filter(r=>String(r['Status'])!=='Closed'&&r['Status']).length;
+  const serious=rows.filter(r=>r['Priority']==='P0'||r['Priority']==='P1').length;
+  const closed=rows.filter(r=>String(r['Status'])==='Closed').length;
+  const rate=total?Math.round(closed/total*100):0;
+  const site=document.getElementById('dSite').value;
+  const now=new Date();
+  const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const thisMonth=allRows.filter(r=>(r['Date Of Incident']||'').slice(0,7)===ym&&(!site||r['Site']===site)).length;
+
+  document.getElementById('kpis').innerHTML=
+    kpi(total,'Total incidents','')+
+    kpi(openN,'Open / in progress',openN>0?'alert':'')+
+    kpi(serious,'Serious (P0/P1)',serious>0?'alert':'')+
+    kpi(thisMonth,'This month','')+
+    kpi(rate+'%','Resolved rate',rate>=80?'good':'');
+
+  barsH('cPrio', countBy(rows,'Priority',['P0','P1','P2','P3','P4']), l=>PC[l]||'#1B2C4D');
+  barsH('cStatus', countBy(rows,'Status',['Open','Under investigation','Closed']), l=>l==='Closed'?'#2E7D32':l==='Open'?'#B23B3B':'#8C6E1F');
+  barsH('cSite', countAuto(rows,'Site',false), ()=> '#1B2C4D');
+  barsH('cPerson', countAuto(rows,'Person Type',true), ()=> '#8C6E1F');
+  barsH('cArea', countAuto(rows,'Area / Location',false).slice(0,8), ()=> '#B8922E');
+  barsH('cType', countAuto(rows,'Incident Type',true), ()=> '#1B2C4D');
+  trend('cTrend', rows);
+  serTable(rows);
+  recentTable(rows);
+}
+
+function kpi(v,l,cls){ return '<div class="kpi '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+function countBy(rows,field,order){
+  const m={}; rows.forEach(r=>{const k=r[field]||''; if(k) m[k]=(m[k]||0)+1;});
+  return order.map(k=>({label:k,value:m[k]||0}));
+}
+function countAuto(rows,field,blankAsNS){
+  const m={}; rows.forEach(r=>{let k=(r[field]||'').trim(); if(!k){ if(blankAsNS) k='Not specified'; else return; } m[k]=(m[k]||0)+1;});
+  return Object.keys(m).map(k=>({label:k,value:m[k]})).sort((a,b)=>b.value-a.value);
+}
+
+function barsH(id,items,colorFn){
+  const el=document.getElementById(id);
+  if(!items.length){ el.innerHTML='<div class="empty">No data</div>'; return; }
+  const max=Math.max(1,...items.map(i=>i.value));
+  el.innerHTML=items.map(i=>
+    '<div class="barrow"><span class="lab" title="'+esc(i.label)+'">'+esc(i.label)+'</span>'+
+    '<span class="track"><span class="fill" style="width:'+Math.round(i.value/max*100)+'%;background:'+colorFn(i.label)+'"></span></span>'+
+    '<span class="num">'+i.value+'</span></div>').join('');
+}
+
+function trend(id,rows){
+  const y=document.getElementById('dYear').value;
+  let months=[];
+  if(y){ for(let m=1;m<=12;m++) months.push(y+'-'+String(m).padStart(2,'0')); }
+  else { const now=new Date(); for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); } }
+  const m={}; rows.forEach(r=>{const k=(r['Date Of Incident']||'').slice(0,7); if(k) m[k]=(m[k]||0)+1;});
+  const vals=months.map(mm=>m[mm]||0); const max=Math.max(1,...vals);
+  const MON=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const lab=mm=>{const p=mm.split('-'); return MON[+p[1]]+(y?'':" '"+p[0].slice(2));};
+  document.getElementById(id).innerHTML='<div class="vbars">'+months.map((mm,i)=>
+    '<div class="vbar"><span class="cv">'+(vals[i]||'')+'</span><div class="col" style="height:'+Math.round(vals[i]/max*100)+'%"></div><span class="cl">'+lab(mm)+'</span></div>').join('')+'</div>';
+}
+
+function serTable(rows){
+  const b=document.getElementById('tSerious');
+  const ser=rows.filter(r=>r['Priority']==='P0'||r['Priority']==='P1').sort((a,b)=>(b['Date Of Incident']||'').localeCompare(a['Date Of Incident']||''));
+  b.innerHTML=ser.length?ser.map(r=>rowHtml(r,['Reference ID','Date Of Incident','Site','Priority','Incident Name','Person Name','Status'])).join(''):'<tr><td colspan="7" class="empty">None in this selection</td></tr>';
+}
+function recentTable(rows){
+  const b=document.getElementById('tRecent');
+  const rec=[...rows].sort((a,b)=>(b['Date Of Incident']||'').localeCompare(a['Date Of Incident']||'')).slice(0,10);
+  b.innerHTML=rec.length?rec.map(r=>rowHtml(r,['Reference ID','Date Of Incident','Site','Priority','Incident Name','Area / Location','Status'])).join(''):'<tr><td colspan="7" class="empty">No incidents</td></tr>';
+}
+function rowHtml(r,fields){
+  return '<tr>'+fields.map(f=>{
+    if(f==='Priority'){ const p=r[f]||''; return '<td><span class="pill '+p+'">'+esc(p)+'</span></td>'; }
+    if(f==='Status'){ const st=(r[f]||'').split(' ')[0]; return '<td><span class="st '+st+'">'+esc(r[f])+'</span></td>'; }
+    return '<td>'+esc(r[f])+'</td>';
+  }).join('')+'</tr>';
 }
 
 function esc(v){ return (v==null?'':String(v)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
