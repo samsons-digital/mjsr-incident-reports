@@ -88,6 +88,25 @@
   .vbar .cl{font-size:10px;color:#8A93A3;margin-top:5px;white-space:nowrap}
   .empty{color:#8A93A3;font-size:13px;padding:10px 0}
   @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.panels{grid-template-columns:1fr}}
+  /* daily tracker */
+  .dtrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .dtlabel{width:230px;flex:none;font-size:14px;font-weight:bold;color:var(--charcoal)}
+  .tgl{border:1px solid #CBD1DA;background:#fff;padding:6px 14px;border-radius:5px;font-size:13px;
+    font-family:inherit;cursor:pointer;font-weight:bold;color:#7A8394}
+  .tgl.ok.on{background:#E7F3E8;border-color:#2E7D32;color:#2E7D32}
+  .tgl.issue.on{background:#FBECEC;border-color:#B23B3B;color:#B23B3B}
+  .dtnote{flex:1;min-width:160px;padding:7px 10px;border:1px solid #CBD1DA;border-radius:5px;font-size:13px;font-family:inherit}
+  .dtx{border:none;background:none;color:#B23B3B;cursor:pointer;font-size:12px;flex:none}
+  .matrix{border-collapse:collapse;font-size:12px;width:100%}
+  .matrix th,.matrix td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  .matrix th.topic,.matrix td.topic{text-align:left;font-weight:bold;white-space:nowrap;background:#FAFBFC}
+  .matrix thead th{background:var(--navy);color:#fff;font-weight:bold;white-space:nowrap}
+  .mc{width:30px;height:24px;cursor:pointer}
+  .mc.ok{background:#2E7D32}.mc.issue{background:#B23B3B}.mc.none{background:#EEF0F3}
+  .legend{font-size:12px;color:#7A8394;margin-top:8px;display:flex;gap:16px;align-items:center}
+  .legend .sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .addtopic{display:flex;gap:8px;margin-top:14px}
+  .addtopic input{flex:1;padding:8px 10px;border:1px solid #CBD1DA;border-radius:5px;font-family:inherit;font-size:13px}
 </style>
 </head>
 <body>
@@ -100,6 +119,7 @@
   <div class="tab active" id="tab-new" onclick="show('new')">New Report</div>
   <div class="tab" id="tab-log" onclick="show('log')">Incident Log</div>
   <div class="tab" id="tab-dash" onclick="show('dash')">Dashboard</div>
+  <div class="tab" id="tab-daily" onclick="show('daily')">Daily Tracker</div>
 </div>
 
 <!-- ===================== NEW REPORT ===================== -->
@@ -342,22 +362,87 @@
   </div>
 </div>
 
+<!-- ===================== DAILY TRACKER ===================== -->
+<div class="wrap" id="view-daily" style="display:none">
+  <div id="gate-daily" class="gate card">
+    <div class="sec-title" style="text-align:left">Restricted</div>
+    <p style="font-size:13px;color:#8A93A3">Enter the manager PIN to open the daily tracker.</p>
+    <input type="password" id="pinDaily" placeholder="PIN" style="text-align:center" onkeydown="if(event.key==='Enter')openDaily()">
+    <div style="margin-top:12px"><button class="btn gold" onclick="openDaily(this)">Open Tracker</button></div>
+    <div id="pinErrDaily" style="color:var(--err);font-size:13px;margin-top:10px"></div>
+  </div>
+
+  <div id="dailyArea" style="display:none">
+    <div id="dailyMsg" class="msg"></div>
+
+    <div class="card">
+      <div class="sec-title">Daily Check</div>
+      <div class="row" style="margin-bottom:6px">
+        <div style="max-width:220px">
+          <label>Date</label>
+          <input type="date" id="dtDate">
+        </div>
+        <div style="max-width:260px">
+          <label>Recorded By</label>
+          <input type="text" id="dtBy" placeholder="Your name (optional)">
+        </div>
+      </div>
+      <div id="dtTopics"></div>
+      <div class="addtopic">
+        <input type="text" id="dtNewTopic" placeholder="Add a new topic to track">
+        <button class="btn gold" style="padding:9px 16px" onclick="addTopic(this)">Add Topic</button>
+      </div>
+      <div style="margin-top:16px"><button class="btn" id="dtSaveBtn" onclick="saveDaily(this)">Save Daily Check</button></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">Day By Day (last 14 days)</div>
+      <p style="font-size:12px;color:#8A93A3;margin:0 0 12px">Click any cell to load that day into the form above for editing.</p>
+      <div style="overflow:auto"><table class="matrix" id="dtMatrix"></table></div>
+      <div class="legend">
+        <span><span class="sw" style="background:#2E7D32"></span>No issue</span>
+        <span><span class="sw" style="background:#B23B3B"></span>Issue reported</span>
+        <span><span class="sw" style="background:#EEF0F3"></span>Not logged</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">Metrics</div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <select id="dtPeriod" onchange="renderDailyMetrics()">
+          <option value="7">This week (7 days)</option>
+          <option value="30" selected>This month (30 days)</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <span class="count" id="dtMetaCount"></span>
+      </div>
+      <div style="overflow:auto"><table class="matrix" id="dtMetrics" style="font-size:13px"></table></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ONLY value to set after deploying the Apps Script web app:
 const API_URL = "https://script.google.com/macros/s/AKfycbxh2wuVDWQXkQc3cVHy4FYg2abDCstjqTiDoYfbNdpujexCg5KWKmfyQVqOj07otS8J/exec";
 
 let allRows = [];
 let authed = false;
+let dailyLoaded = false;
+let dailyTopics = [];
+let dailyLog = [];
 
 function show(v){
   document.getElementById('view-new').style.display = v==='new'?'block':'none';
   document.getElementById('view-log').style.display = v==='log'?'block':'none';
   document.getElementById('view-dash').style.display = v==='dash'?'block':'none';
+  document.getElementById('view-daily').style.display = v==='daily'?'block':'none';
   document.getElementById('tab-new').classList.toggle('active', v==='new');
   document.getElementById('tab-log').classList.toggle('active', v==='log');
   document.getElementById('tab-dash').classList.toggle('active', v==='dash');
+  document.getElementById('tab-daily').classList.toggle('active', v==='daily');
   if(v==='log') syncGate('log');
   if(v==='dash') syncGate('dash');
+  if(v==='daily') syncGate('daily');
 }
 
 function syncGate(which){
@@ -365,10 +450,14 @@ function syncGate(which){
     document.getElementById('gate').style.display = authed?'none':'block';
     document.getElementById('logArea').style.display = authed?'block':'none';
     if(authed) renderLog();
-  } else {
+  } else if(which==='dash'){
     document.getElementById('gate-dash').style.display = authed?'none':'block';
     document.getElementById('dashArea').style.display = authed?'block':'none';
     if(authed) renderDash();
+  } else {
+    document.getElementById('gate-daily').style.display = authed?'none':'block';
+    document.getElementById('dailyArea').style.display = authed?'block':'none';
+    if(authed){ if(!dailyLoaded){ loadDaily(()=>{dailyLoaded=true;initDaily();}); } else { renderDaily(); } }
   }
 }
 
@@ -475,6 +564,14 @@ function openDash(btn){
   if(!pin){ document.getElementById('pinErrDash').textContent='Enter the PIN.'; return; }
   window._pin = pin;
   loadData(()=>syncGate('dash'), 'pinErrDash', btn);
+}
+
+function openDaily(btn){
+  const pin = document.getElementById('pinDaily').value.trim();
+  if(!pin){ document.getElementById('pinErrDaily').textContent='Enter the PIN.'; return; }
+  window._pin = pin;
+  authed = true;
+  loadDaily(()=>{ dailyLoaded = true; document.getElementById('pinErrDaily').textContent=''; syncGate('daily'); initDaily(); }, 'pinErrDaily', btn);
 }
 
 async function loadData(cb, errId, btnEl){
@@ -657,6 +754,155 @@ function rowHtml(r,fields){
     if(f==='Status'){ const st=(r[f]||'').split(' ')[0]; return '<td><span class="st '+st+'">'+esc(r[f])+'</span></td>'; }
     return '<td>'+esc(r[f])+'</td>';
   }).join('')+'</tr>';
+}
+
+// ---------- DAILY TRACKER ----------
+async function loadDaily(cb, errId, btnEl){
+  const err = errId ? document.getElementById(errId) : null;
+  if(err) err.textContent='';
+  let old='';
+  if(btnEl){ old=btnEl.textContent; btnEl.textContent='Loading...'; btnEl.disabled=true; }
+  try{
+    const res = await fetch(API_URL + '?action=daily&pin=' + encodeURIComponent(window._pin));
+    const data = await res.json();
+    if(!data.ok){ if(err) err.textContent = data.error || 'Access denied.'; authed=false; return; }
+    dailyTopics = data.topics || [];
+    dailyLog = data.log || [];
+    authed = true;
+    if(cb) cb();
+  }catch(e){ if(err) err.textContent='Network error: '+e.message; }
+  finally{ if(btnEl){ btnEl.textContent=old; btnEl.disabled=false; } }
+}
+
+function pad(n){ return (n<10?'0':'')+n; }
+function fmtd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function todayStr(){ return fmtd(new Date()); }
+function lastDates(n){ const a=[]; const t=new Date(); t.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ const d=new Date(t); d.setDate(t.getDate()-i); a.push(d); } return a; }
+function logMap(){ const m={}; dailyLog.forEach(r=>{ m[r.date+'|'+r.topic]={status:r.status,note:r.note}; }); return m; }
+function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
+
+function initDaily(){ renderDaily(); }
+function renderDaily(){
+  if(!document.getElementById('dtDate').value) document.getElementById('dtDate').value=todayStr();
+  buildEntryForm(document.getElementById('dtDate').value);
+  renderMatrix();
+  renderDailyMetrics();
+}
+
+function buildEntryForm(dateStr){
+  const map=logMap();
+  const c=document.getElementById('dtTopics'); c.innerHTML='';
+  if(!dailyTopics.length){ c.innerHTML='<div class="empty">No topics yet. Add one below.</div>'; return; }
+  dailyTopics.forEach(tp=>{
+    const rec=map[dateStr+'|'+tp];
+    const st=rec?rec.status:''; const note=rec?rec.note:'';
+    const row=document.createElement('div');
+    row.className='dtrow'; row.dataset.topic=tp; row.dataset.status=st;
+    row.innerHTML=
+      '<span class="dtlabel">'+esc(tp)+'</span>'+
+      '<button type="button" class="tgl ok'+(st==='OK'?' on':'')+'" onclick="setTgl(this,\'OK\')">No issue</button>'+
+      '<button type="button" class="tgl issue'+(st==='Issue'?' on':'')+'" onclick="setTgl(this,\'Issue\')">Issue</button>'+
+      '<input class="dtnote" placeholder="One line note if issue" value="'+attr(note)+'">'+
+      '<button type="button" class="dtx" onclick="removeTopic(this)">remove</button>';
+    c.appendChild(row);
+  });
+}
+
+function setTgl(btn,status){
+  const row=btn.closest('.dtrow');
+  row.dataset.status=status;
+  row.querySelector('.tgl.ok').classList.toggle('on',status==='OK');
+  row.querySelector('.tgl.issue').classList.toggle('on',status==='Issue');
+}
+
+function collectEntries(){
+  const out=[];
+  document.querySelectorAll('#dtTopics .dtrow').forEach(r=>{
+    const s=r.dataset.status;
+    if(s==='OK'||s==='Issue') out.push({topic:r.dataset.topic,status:s,note:r.querySelector('.dtnote').value.trim()});
+  });
+  return out;
+}
+
+async function dailyPost(payload, btn){
+  let old=''; if(btn){ old=btn.textContent; btn.textContent='Saving...'; btn.disabled=true; }
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(Object.assign({pin:window._pin},payload))});
+    return await res.json();
+  }catch(e){ return {ok:false,error:e.message}; }
+  finally{ if(btn){ btn.textContent=old; btn.disabled=false; } }
+}
+
+async function saveDaily(btn){
+  const date=document.getElementById('dtDate').value || todayStr();
+  const msg=document.getElementById('dailyMsg'); msg.className='msg';
+  const entries=collectEntries();
+  if(!entries.length){ msg.className='msg err'; msg.textContent='Mark at least one topic as No issue or Issue.'; return; }
+  const by=document.getElementById('dtBy').value.trim();
+  const data=await dailyPost({action:'dailySave',date:date,recordedBy:by,entries:entries},btn);
+  if(data.ok){ msg.className='msg ok'; msg.textContent='Saved daily check for '+date+'.';
+    await loadDaily(()=>{ buildEntryForm(date); renderMatrix(); renderDailyMetrics(); }); }
+  else { msg.className='msg err'; msg.textContent='Error: '+(data.error||'save failed'); }
+}
+
+async function addTopic(btn){
+  const inp=document.getElementById('dtNewTopic'); const v=inp.value.trim();
+  if(!v) return;
+  const data=await dailyPost({action:'addTopic',topic:v},btn);
+  if(data.ok){ inp.value=''; await loadDaily(()=>renderDaily()); }
+}
+
+async function removeTopic(btn){
+  const tp=btn.closest('.dtrow').dataset.topic;
+  if(!confirm('Stop tracking "'+tp+'"? Past history stays in the sheet.')) return;
+  const data=await dailyPost({action:'archiveTopic',topic:tp});
+  if(data.ok){ await loadDaily(()=>renderDaily()); }
+}
+
+function renderMatrix(){
+  const el=document.getElementById('dtMatrix');
+  if(!dailyTopics.length){ el.innerHTML='<tr><td class="empty">No topics yet.</td></tr>'; return; }
+  const dates=lastDates(14); const map=logMap();
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const head='<thead><tr><th class="topic">Topic</th>'+dates.map(d=>'<th>'+pad(d.getDate())+'<br>'+MON[d.getMonth()]+'</th>').join('')+'</tr></thead>';
+  const body='<tbody>'+dailyTopics.map(tp=>
+    '<tr><td class="topic">'+esc(tp)+'</td>'+dates.map(d=>{
+      const ds=fmtd(d); const rec=map[ds+'|'+tp];
+      const cls=rec?(rec.status==='OK'?'ok':'issue'):'none';
+      const title=rec&&rec.note?' title="'+attr(rec.note)+'"':'';
+      return '<td class="mc '+cls+'"'+title+' onclick="loadDateIntoForm(\''+ds+'\')"></td>';
+    }).join('')+'</tr>').join('')+'</tbody>';
+  el.innerHTML=head+body;
+}
+
+function loadDateIntoForm(ds){
+  document.getElementById('dtDate').value=ds;
+  buildEntryForm(ds);
+  document.getElementById('dtTopics').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function renderDailyMetrics(){
+  const el=document.getElementById('dtMetrics');
+  if(!dailyTopics.length){ el.innerHTML='<tr><td class="empty">No topics yet.</td></tr>'; return; }
+  const n=+document.getElementById('dtPeriod').value;
+  const inWin=new Set(lastDates(n).map(fmtd));
+  let totalIssue=0;
+  const rows=dailyTopics.map(tp=>{
+    let ok=0,iss=0;
+    dailyLog.forEach(r=>{ if(r.topic===tp && inWin.has(r.date)){ if(r.status==='OK')ok++; else if(r.status==='Issue')iss++; } });
+    totalIssue+=iss;
+    const tot=ok+iss; return {tp,ok,iss,tot,rate:tot?Math.round(ok/tot*100):0};
+  });
+  const head='<thead><tr><th class="topic">Topic</th><th>No issue days</th><th>Issue days</th><th>Logged</th><th>% Clear</th></tr></thead>';
+  const body='<tbody>'+rows.map(r=>
+    '<tr><td class="topic">'+esc(r.tp)+'</td>'+
+    '<td style="color:#2E7D32;font-weight:bold">'+r.ok+'</td>'+
+    '<td style="color:#B23B3B;font-weight:bold">'+r.iss+'</td>'+
+    '<td>'+r.tot+'</td>'+
+    '<td><strong>'+(r.tot?r.rate+'%':'-')+'</strong></td></tr>').join('')+'</tbody>';
+  el.innerHTML=head+body;
+  document.getElementById('dtMetaCount').textContent=totalIssue+' issue-days in period';
 }
 
 function esc(v){ return (v==null?'':String(v)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
