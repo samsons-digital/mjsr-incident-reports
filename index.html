@@ -126,6 +126,18 @@
   .lg{display:inline-block;width:20px;height:18px;border-radius:3px;color:#fff;text-align:center;line-height:18px;font-weight:bold;font-size:12px;vertical-align:middle;margin-right:5px}
   .lg-issue{background:#B23B3B}.lg-ok{background:#2E7D32}
   .mmtitle{font-size:16px;font-weight:bold;color:var(--navy);margin:4px 0 10px}
+  /* today's incidents shareable card */
+  .todaycard{max-width:470px;border:1px solid var(--line);border-radius:12px;padding:20px 22px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+  .todayhead{font-size:18px;font-weight:bold;color:var(--navy);text-align:center}
+  .todaydate{font-size:13px;color:#7A8394;text-align:center;margin:2px 0 12px;border-bottom:2px solid var(--gold);padding-bottom:12px}
+  .todayrow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #EDEFF2}
+  .todayrow:last-child{border-bottom:none}
+  .tnum{color:#8A93A3;font-size:13px;width:22px;flex:none}
+  .tname{flex:1;font-size:14px;color:var(--charcoal);font-weight:bold}
+  .ticon{flex:none;display:flex}
+  .todash{display:inline-block;width:20px;height:20px;border-radius:50%;background:#EDEFF2;color:#9AA3B0;text-align:center;line-height:20px;font-weight:bold;font-size:13px}
+  .todaylegend{display:flex;gap:18px;justify-content:center;margin-top:14px;font-size:12px;color:#7A8394}
+  .todaylegend span{display:flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
@@ -412,6 +424,12 @@
         <button class="btn gold" style="padding:9px 16px" onclick="addTopic(this)">Add Topic</button>
       </div>
       <div style="margin-top:16px"><button class="btn" id="dtSaveBtn" onclick="saveDaily(this)">Save Daily Check</button></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">Today's Incidents</div>
+      <p style="font-size:12px;color:#8A93A3;margin:0 0 12px">Screenshot the card below to share with management.</p>
+      <div id="dtToday"></div>
     </div>
 
     <div class="card">
@@ -802,15 +820,37 @@ function todayStr(){ return fmtd(new Date()); }
 function lastDates(n){ const a=[]; const t=new Date(); t.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ const d=new Date(t); d.setDate(t.getDate()-i); a.push(d); } return a; }
 function logMap(){ const m={}; dailyLog.forEach(r=>{ m[r.date+'|'+r.topic]={status:r.status,note:r.note}; }); return m; }
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
-function tick(color,size){ size=size||18; return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><circle cx="12" cy="12" r="11" fill="'+color+'"/><path d="M6.6 12.4l3.3 3.3 7-7.1" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
-var OKG="#2E7D32", ISR="#B23B3B";
+function okIcon(size){ size=size||18; return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><circle cx="12" cy="12" r="11" fill="#2E7D32"/><path d="M6.6 12.4l3.3 3.3 7-7.1" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function issueIcon(size){ size=size||18; return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><circle cx="12" cy="12" r="11" fill="#B23B3B"/><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>'; }
 
 function initDaily(){ renderDaily(); }
 function renderDaily(){
   if(!document.getElementById('dtDate').value) document.getElementById('dtDate').value=todayStr();
   buildEntryForm(document.getElementById('dtDate').value);
+  renderToday();
   renderMatrix();
   renderDailyMetrics();
+}
+
+function renderToday(){
+  const el=document.getElementById('dtToday');
+  if(!dailyTopics.length){ el.innerHTML='<div class="empty">No topics yet.</div>'; return; }
+  const ds=todayStr(); const map=logMap();
+  const dt=new Date();
+  const nice=dt.getDate()+' '+MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+  const rows=dailyTopics.map((tp,i)=>{
+    const rec=map[ds+'|'+tp];
+    let icon;
+    if(rec){ icon = rec.status==='OK' ? okIcon(20) : issueIcon(20); }
+    else { icon = '<span class="todash">-</span>'; }
+    return '<div class="todayrow"><span class="tnum">'+(i+1)+'.</span><span class="tname">'+esc(tp)+'</span><span class="ticon">'+icon+'</span></div>';
+  }).join('');
+  el.innerHTML='<div class="todaycard">'+
+    '<div class="todayhead">MJSR Daily Incident Report</div>'+
+    '<div class="todaydate">'+nice+'</div>'+
+    rows+
+    '<div class="todaylegend"><span>'+issueIcon(15)+'Issue reported</span><span>'+okIcon(15)+'No issue</span></div>'+
+    '</div>';
 }
 
 function buildEntryForm(dateStr){
@@ -825,8 +865,8 @@ function buildEntryForm(dateStr){
     tile.innerHTML=
       '<div class="t2desc">'+esc(tp)+'</div>'+
       '<div class="t2btns">'+
-        '<button type="button" class="t2 ok'+(st==='OK'?' on':'')+'" onclick="setTgl(this,\'OK\')">'+tick(OKG,18)+'No issue</button>'+
-        '<button type="button" class="t2 issue'+(st==='Issue'?' on':'')+'" onclick="setTgl(this,\'Issue\')">'+tick(ISR,18)+'Issue</button>'+
+        '<button type="button" class="t2 ok'+(st==='OK'?' on':'')+'" onclick="setTgl(this,\'OK\')">'+okIcon(18)+'No issue</button>'+
+        '<button type="button" class="t2 issue'+(st==='Issue'?' on':'')+'" onclick="setTgl(this,\'Issue\')">'+issueIcon(18)+'Issue</button>'+
       '</div>'+
       '<input class="dtnote" placeholder="Note if issue" value="'+attr(note)+'">'+
       '<button type="button" class="dtx" onclick="removeTopic(this)">remove</button>';
@@ -868,7 +908,7 @@ async function saveDaily(btn){
   const by=document.getElementById('dtBy').value.trim();
   const data=await dailyPost({action:'dailySave',date:date,recordedBy:by,entries:entries},btn);
   if(data.ok){ msg.className='msg ok'; msg.textContent='Saved daily check for '+date+'.';
-    await loadDaily(()=>{ buildEntryForm(date); renderMatrix(); renderDailyMetrics(); }); }
+    await loadDaily(()=>{ buildEntryForm(date); renderToday(); renderMatrix(); renderDailyMetrics(); }); }
   else { msg.className='msg err'; msg.textContent='Error: '+(data.error||'save failed'); }
 }
 
@@ -913,7 +953,7 @@ function renderMatrix(){
       const dow=new Date(y,m,d).getDay(); const we=(dow===0||dow===6)?' weekend':'';
       const rec=map[ds+'|'+tp];
       let cls='none', sym='';
-      if(rec){ if(rec.status==='OK'){ cls='ok'; sym=tick(OKG,16); } else { cls='issue'; sym=tick(ISR,16); issues++; } }
+      if(rec){ if(rec.status==='OK'){ cls='ok'; sym=okIcon(16); } else { cls='issue'; sym=issueIcon(16); issues++; } }
       const title=rec&&rec.note?' title="'+attr(rec.note)+'"':'';
       cells+='<td class="mmc '+cls+we+'"'+title+' onclick="loadDateIntoForm(\''+ds+'\')">'+sym+'</td>';
     }
