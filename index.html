@@ -89,14 +89,22 @@
   .empty{color:#8A93A3;font-size:13px;padding:10px 0}
   @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.panels{grid-template-columns:1fr}}
   /* daily tracker */
-  .dtrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
-  .dtlabel{width:230px;flex:none;font-size:14px;font-weight:bold;color:var(--charcoal)}
-  .tgl{border:1px solid #CBD1DA;background:#fff;padding:6px 14px;border-radius:5px;font-size:13px;
-    font-family:inherit;cursor:pointer;font-weight:bold;color:#7A8394}
-  .tgl.ok.on{background:#E7F3E8;border-color:#2E7D32;color:#2E7D32}
-  .tgl.issue.on{background:#FBECEC;border-color:#B23B3B;color:#B23B3B}
-  .dtnote{flex:1;min-width:160px;padding:7px 10px;border:1px solid #CBD1DA;border-radius:5px;font-size:13px;font-family:inherit}
-  .dtx{border:none;background:none;color:#B23B3B;cursor:pointer;font-size:12px;flex:none}
+  /* daily entry tiles */
+  #dtTopics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px}
+  @media(max-width:1150px){#dtTopics{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:860px){#dtTopics{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:540px){#dtTopics{grid-template-columns:1fr}}
+  .tile2{border:1px solid var(--line);border-radius:9px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:9px}
+  .t2desc{font-size:13px;font-weight:bold;color:var(--charcoal);line-height:1.3;min-height:36px}
+  .t2btns{display:flex;gap:8px}
+  .t2{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 6px;border:1.5px solid #E2E5EA;
+    border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:bold;color:#8A93A3;font-family:inherit}
+  .t2.ok.on{border-color:#2E7D32;background:#E7F3E8;color:#2E7D32}
+  .t2.issue.on{border-color:#B23B3B;background:#FBECEC;color:#B23B3B}
+  .t2 svg{opacity:.35}
+  .t2.on svg{opacity:1}
+  .dtnote{padding:7px 10px;border:1px solid #CBD1DA;border-radius:5px;font-size:13px;font-family:inherit;width:100%}
+  .dtx{align-self:flex-end;border:none;background:none;color:#B23B3B;cursor:pointer;font-size:11px}
   .matrix{border-collapse:collapse;font-size:12px;width:100%}
   .matrix th,.matrix td{border:1px solid var(--line);padding:6px 8px;text-align:center}
   .matrix th.topic,.matrix td.topic{text-align:left;font-weight:bold;white-space:nowrap;background:#FAFBFC}
@@ -107,6 +115,20 @@
   .legend .sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:middle}
   .addtopic{display:flex;gap:8px;margin-top:14px}
   .addtopic input{flex:1;padding:8px 10px;border:1px solid #CBD1DA;border-radius:5px;font-family:inherit;font-size:13px}
+  /* monthly monitor */
+  .mm{border-collapse:collapse;font-size:12px}
+  .mm th,.mm td{border:1px solid #D8DCE2;text-align:center;padding:3px 0;min-width:22px}
+  .mm th.desc,.mm td.desc{text-align:left;padding:5px 8px;min-width:240px;white-space:nowrap;font-weight:bold;background:#FAFBFC}
+  .mm th.count,.mm td.count{min-width:72px;padding:5px 6px;font-weight:bold;background:#FAFBFC}
+  .mm thead th{background:var(--navy);color:#fff}
+  .mm thead th.wd{background:#33456A;font-weight:normal;color:#C9D2E0}
+  .mm thead th.weekend{background:#25344C}
+  .mm .mmc{cursor:pointer;height:24px;background:#fff;padding:2px}
+  .mm .mmc.none.weekend{background:#EDEFF2}
+  .mm .mmc svg{margin:0 auto;display:block}
+  .lg{display:inline-block;width:20px;height:18px;border-radius:3px;color:#fff;text-align:center;line-height:18px;font-weight:bold;font-size:12px;vertical-align:middle;margin-right:5px}
+  .lg-issue{background:#B23B3B}.lg-ok{background:#2E7D32}
+  .mmtitle{font-size:16px;font-weight:bold;color:var(--navy);margin:4px 0 10px}
 </style>
 </head>
 <body>
@@ -396,14 +418,17 @@
     </div>
 
     <div class="card">
-      <div class="sec-title">Day By Day (last 14 days)</div>
-      <p style="font-size:12px;color:#8A93A3;margin:0 0 12px">Click any cell to load that day into the form above for editing.</p>
-      <div style="overflow:auto"><table class="matrix" id="dtMatrix"></table></div>
-      <div class="legend">
-        <span><span class="sw" style="background:#2E7D32"></span>No issue</span>
-        <span><span class="sw" style="background:#B23B3B"></span>Issue reported</span>
-        <span><span class="sw" style="background:#EEF0F3"></span>Not logged</span>
+      <div class="sec-title">Monthly Incidents Monitor</div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <input type="month" id="dtMonth" onchange="renderMatrix()">
+        <span style="font-size:13px;color:var(--charcoal);display:flex;gap:20px;align-items:center;margin-left:6px">
+          <span><span class="lg lg-issue">&#10005;</span>Issue Reported</span>
+          <span><span class="lg lg-ok">&#10003;</span>No Issue Reported</span>
+        </span>
       </div>
+      <p style="font-size:12px;color:#8A93A3;margin:0 0 10px">Click any day cell to load that date into the form above for editing.</p>
+      <div class="mmtitle" id="dtMonthTitle"></div>
+      <div style="overflow:auto"><table class="mm" id="dtMatrix"></table></div>
     </div>
 
     <div class="card">
@@ -780,6 +805,8 @@ function todayStr(){ return fmtd(new Date()); }
 function lastDates(n){ const a=[]; const t=new Date(); t.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ const d=new Date(t); d.setDate(t.getDate()-i); a.push(d); } return a; }
 function logMap(){ const m={}; dailyLog.forEach(r=>{ m[r.date+'|'+r.topic]={status:r.status,note:r.note}; }); return m; }
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function tick(color,size){ size=size||18; return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'"><circle cx="12" cy="12" r="11" fill="'+color+'"/><path d="M6.6 12.4l3.3 3.3 7-7.1" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+var OKG="#2E7D32", ISR="#B23B3B";
 
 function initDaily(){ renderDaily(); }
 function renderDaily(){
@@ -796,28 +823,30 @@ function buildEntryForm(dateStr){
   dailyTopics.forEach(tp=>{
     const rec=map[dateStr+'|'+tp];
     const st=rec?rec.status:''; const note=rec?rec.note:'';
-    const row=document.createElement('div');
-    row.className='dtrow'; row.dataset.topic=tp; row.dataset.status=st;
-    row.innerHTML=
-      '<span class="dtlabel">'+esc(tp)+'</span>'+
-      '<button type="button" class="tgl ok'+(st==='OK'?' on':'')+'" onclick="setTgl(this,\'OK\')">No issue</button>'+
-      '<button type="button" class="tgl issue'+(st==='Issue'?' on':'')+'" onclick="setTgl(this,\'Issue\')">Issue</button>'+
-      '<input class="dtnote" placeholder="One line note if issue" value="'+attr(note)+'">'+
+    const tile=document.createElement('div');
+    tile.className='tile2'; tile.dataset.topic=tp; tile.dataset.status=st;
+    tile.innerHTML=
+      '<div class="t2desc">'+esc(tp)+'</div>'+
+      '<div class="t2btns">'+
+        '<button type="button" class="t2 ok'+(st==='OK'?' on':'')+'" onclick="setTgl(this,\'OK\')">'+tick(OKG,18)+'No issue</button>'+
+        '<button type="button" class="t2 issue'+(st==='Issue'?' on':'')+'" onclick="setTgl(this,\'Issue\')">'+tick(ISR,18)+'Issue</button>'+
+      '</div>'+
+      '<input class="dtnote" placeholder="Note if issue" value="'+attr(note)+'">'+
       '<button type="button" class="dtx" onclick="removeTopic(this)">remove</button>';
-    c.appendChild(row);
+    c.appendChild(tile);
   });
 }
 
 function setTgl(btn,status){
-  const row=btn.closest('.dtrow');
-  row.dataset.status=status;
-  row.querySelector('.tgl.ok').classList.toggle('on',status==='OK');
-  row.querySelector('.tgl.issue').classList.toggle('on',status==='Issue');
+  const tile=btn.closest('.tile2');
+  tile.dataset.status=status;
+  tile.querySelector('.t2.ok').classList.toggle('on',status==='OK');
+  tile.querySelector('.t2.issue').classList.toggle('on',status==='Issue');
 }
 
 function collectEntries(){
   const out=[];
-  document.querySelectorAll('#dtTopics .dtrow').forEach(r=>{
+  document.querySelectorAll('#dtTopics .tile2').forEach(r=>{
     const s=r.dataset.status;
     if(s==='OK'||s==='Issue') out.push({topic:r.dataset.topic,status:s,note:r.querySelector('.dtnote').value.trim()});
   });
@@ -854,25 +883,45 @@ async function addTopic(btn){
 }
 
 async function removeTopic(btn){
-  const tp=btn.closest('.dtrow').dataset.topic;
+  const tp=btn.closest('.tile2').dataset.topic;
   if(!confirm('Stop tracking "'+tp+'"? Past history stays in the sheet.')) return;
   const data=await dailyPost({action:'archiveTopic',topic:tp});
   if(data.ok){ await loadDaily(()=>renderDaily()); }
 }
 
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 function renderMatrix(){
   const el=document.getElementById('dtMatrix');
+  let mv=document.getElementById('dtMonth').value;
+  if(!mv){ const t=new Date(); mv=t.getFullYear()+'-'+pad(t.getMonth()+1); document.getElementById('dtMonth').value=mv; }
+  const parts=mv.split('-'); const y=+parts[0], m=+parts[1]-1;
+  document.getElementById('dtMonthTitle').textContent='Monthly Incidents Monitor - '+MONTHS[m]+' '+y;
   if(!dailyTopics.length){ el.innerHTML='<tr><td class="empty">No topics yet.</td></tr>'; return; }
-  const dates=lastDates(14); const map=logMap();
-  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const head='<thead><tr><th class="topic">Topic</th>'+dates.map(d=>'<th>'+pad(d.getDate())+'<br>'+MON[d.getMonth()]+'</th>').join('')+'</tr></thead>';
-  const body='<tbody>'+dailyTopics.map(tp=>
-    '<tr><td class="topic">'+esc(tp)+'</td>'+dates.map(d=>{
-      const ds=fmtd(d); const rec=map[ds+'|'+tp];
-      const cls=rec?(rec.status==='OK'?'ok':'issue'):'none';
+  const dim=daysInMonth(y,m); const map=logMap();
+  const WD=['S','M','T','W','T','F','S'];
+  let wdRow='<th class="desc"></th><th class="count"></th>';
+  let numRow='<th class="desc">Description</th><th class="count">Days with Issues</th>';
+  for(let d=1;d<=dim;d++){
+    const dow=new Date(y,m,d).getDay(); const we=(dow===0||dow===6)?' weekend':'';
+    wdRow+='<th class="wd'+we+'">'+WD[dow]+'</th>';
+    numRow+='<th class="'+(we?'weekend':'')+'">'+d+'</th>';
+  }
+  const head='<thead><tr>'+wdRow+'</tr><tr>'+numRow+'</tr></thead>';
+  const body='<tbody>'+dailyTopics.map(tp=>{
+    let issues=0, cells='';
+    for(let d=1;d<=dim;d++){
+      const ds=y+'-'+pad(m+1)+'-'+pad(d);
+      const dow=new Date(y,m,d).getDay(); const we=(dow===0||dow===6)?' weekend':'';
+      const rec=map[ds+'|'+tp];
+      let cls='none', sym='';
+      if(rec){ if(rec.status==='OK'){ cls='ok'; sym=tick(OKG,16); } else { cls='issue'; sym=tick(ISR,16); issues++; } }
       const title=rec&&rec.note?' title="'+attr(rec.note)+'"':'';
-      return '<td class="mc '+cls+'"'+title+' onclick="loadDateIntoForm(\''+ds+'\')"></td>';
-    }).join('')+'</tr>').join('')+'</tbody>';
+      cells+='<td class="mmc '+cls+we+'"'+title+' onclick="loadDateIntoForm(\''+ds+'\')">'+sym+'</td>';
+    }
+    return '<tr><td class="desc">'+esc(tp)+'</td><td class="count">'+issues+'</td>'+cells+'</tr>';
+  }).join('')+'</tbody>';
   el.innerHTML=head+body;
 }
 
